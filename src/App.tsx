@@ -1,6 +1,6 @@
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { categories } from './data/dares'
-import { advanceGame, createGame, replaceDare, scoreLevel } from './lib/game'
+import { advanceGame, createGame, choosePlayer, replaceDare, scoreLevel } from './lib/game'
 import { defaultSettings, readStore, writeStore } from './lib/storage'
 import { supabase } from './lib/supabase'
 import { cloudIdentity, deleteCloudDare, fetchCloudDares, requestMagicLink, signOutCloud, syncCloudDares } from './services/customDares'
@@ -8,12 +8,12 @@ import { useTimer } from './hooks/useTimer'
 import type { Category, Dare, GameMode, GameSettings, GameState, Gender, Player, Target } from './types'
 
 type View = 'home' | 'setup' | 'game' | 'dares' | 'settings' | 'join'
-const genders: Gender[] = ['Mann', 'Frau', 'Divers', 'Keine Angabe']
+const genders: Gender[] = ['Mann', 'Frau',]
 const modes: { mode: GameMode; hint: string }[] = [
-  { mode: 'Classic', hint: 'Steigt natürlich an' }, { mode: 'Random', hint: 'Alle erlaubten Level' }, { mode: 'Custom', hint: 'Nur eure eigenen Dares' },
-  { mode: 'Mixed', hint: 'Eigene + vorinstallierte' }, { mode: 'Chill', hint: 'Nur Cute & Flirty' }, { mode: 'Spicy', hint: 'Direkt ab Level 2' }
+  { mode: 'Classic', hint: 'Steigt natürlich an' }, { mode: 'Custom', hint: 'Nur eure eigenen Dares' },
+  { mode: 'Choose', hint: 'Ihr entscheidet, wer dran ist' }, { mode: 'Spicy', hint: 'Direkt ab Level 2' }
 ]
-const initialPlayer = (): Player => ({ name: '', gender: 'Keine Angabe', skips: 3 })
+const initialPlayer = (): Player => ({ name: '', gender: 'Mann', skips: 3 })
 const labelForLevel = (n: number) => ['Cute', 'Flirty', 'Spicy', 'Hot', 'Very Hot'][n - 1]
 function playGentleChime() {
   try {
@@ -105,11 +105,70 @@ function Game({ game, customDares, setGame, onHome, announce }: { game: GameStat
       playGentleChime()
     }
   }, [game.currentDare.id, game.round, game.settings.sound, timer.ended])
-  const player = game.players[game.currentPlayerIndex]; const level = scoreLevel(game.spiceScore)
+  const player = game.players[game.currentPlayerIndex];const partner =
+  game.players[game.currentPlayerIndex === 0 ? 1 : 0]
+
+const dareText = game.currentDare.text
+  .replace(/deinem Partner/gi, partner.name)
+  .replace(/deinen Partner/gi, partner.name)
+  .replace(/dein Partner/gi, partner.name); const level = scoreLevel(game.spiceScore)
+if (game.mode === 'Choose' && game.choosePending) {
+  return (
+    <Shell>
+      <header className="game-head">
+        <button
+          className="icon-button"
+          onClick={onHome}
+          aria-label="Zur Startseite"
+        >
+          ⌂
+        </button>
+
+        <div>
+          <b>RUNDE {game.round}</b>
+          <small>
+            {game.mode} · Code {game.gameCode}
+          </small>
+        </div>
+
+        <div style={{ width: 38 }} />
+      </header>
+
+      <section className="choose-turn">
+        <div className="turn">
+          <p>NÄCHSTE RUNDE</p>
+          <h1>Wer ist dran?</h1>
+        </div>
+
+        <div className="choose-players">
+          {game.players.map((p, index) => (
+            <button
+              key={index}
+              className="choose-player"
+              onClick={() => {
+                const next = choosePlayer(
+                  game,
+                  customDares,
+                  index as 0 | 1
+                )
+
+                setGame(next)
+                announce(`${p.name} ist dran.`)
+              }}
+            >
+              <span>{p.name}</span>
+              <small>Ich bin dran</small>
+            </button>
+          ))}
+        </div>
+      </section>
+    </Shell>
+  )
+}
   const formatted = `${Math.floor(timer.remaining / 60).toString().padStart(2, '0')}:${(timer.remaining % 60).toString().padStart(2, '0')}`
   const proceed = (done: boolean) => { if (!done && !game.settings.unlimitedSkips && player.skips <= 0) return announce(`${player.name} hat keine Skips mehr.`); let current = game; if (!done && !game.settings.unlimitedSkips) { const players = [...game.players] as [Player, Player]; players[game.currentPlayerIndex] = { ...player, skips: player.skips - 1 }; current = { ...game, players } } const next = advanceGame(current, customDares, done); setGame(next); announce(done ? `Jetzt ist ${next.players[next.currentPlayerIndex].name} dran.` : 'Übersprungen – ganz ohne Druck.'); }
   if (game.paused) return <Shell><section className="pause"><p className="eyebrow">PAUSE</p><h1>Ganz in eurem Tempo.</h1><p className="muted">Sprecht miteinander. Ihr müsst nichts tun, was sich nicht gut anfühlt.</p><button className="primary" onClick={() => setGame({ ...game, paused: false })}>Spiel fortsetzen</button><button className="ghost" onClick={onHome}>Zur Startseite</button></section></Shell>
-  return <Shell><header className="game-head"><button className="icon-button" onClick={() => setGame({ ...game, paused: true })} aria-label="Spiel pausieren">Ⅱ</button><div><b>RUNDE {game.round}</b><small>{game.mode} · Code {game.gameCode}</small></div><button className="icon-button" onClick={onHome} aria-label="Zur Startseite">⌂</button></header><section className="turn"><p>{player.name.toUpperCase()}</p><h1>Du bist dran</h1></section><div className="spice"><div><span>SPICE PROGRESS</span><b>{game.spiceScore}%</b></div><div className="spice-bar"><i style={{ width: `${game.spiceScore}%` }} /></div><p>Level {level} · {labelForLevel(level)}</p></div><article className={game.settings.animations ? 'dare-card reveal' : 'dare-card'}><div className="dare-meta"><span>{game.currentDare.isSpecial ? '✦ SURPRISE DARE' : game.currentDare.category}</span><span>LEVEL {game.currentDare.spiceLevel}</span></div><h2>{game.currentDare.text}</h2>{game.currentDare.description && <p>{game.currentDare.description}</p>}{game.currentDare.isTimer && game.settings.timerEnabled && <div className="timer"><strong>{formatted}</strong>{timer.ended && <b className="timeup">Time’s up! ✦</b>}<div><button onClick={timer.running ? timer.pause : timer.start}>{timer.running ? 'Pause' : 'Start'}</button><button onClick={timer.reset}>Zurücksetzen</button></div></div>}</article><div className="game-actions"><button className="primary" onClick={() => proceed(true)}>Geschafft <span>✓</span></button><button className="secondary" onClick={() => proceed(false)}>Überspringen {game.settings.unlimitedSkips ? '' : `· ${player.skips} ○`}</button><button className="ghost" onClick={() => setGame(replaceDare(game, customDares))}>Neue Aufgabe</button></div><div className="stats"><span>✦ {game.completed} erledigt</span><span>⚡ {game.streak} Streak</span></div>{game.completed > 0 && game.completed % 10 === 0 && <p className="achievement">{game.completed} Dares geschafft! Ihr seid im Flow. ✦</p>}</Shell>
+  return <Shell><header className="game-head"><button className="icon-button" onClick={() => setGame({ ...game, paused: true })} aria-label="Spiel pausieren">Ⅱ</button><div><b>RUNDE {game.round}</b><small>{game.mode} · Code {game.gameCode}</small></div><button className="icon-button" onClick={onHome} aria-label="Zur Startseite">⌂</button></header><section className="turn"><p>{player.name.toUpperCase()}</p><h1>Du bist dran</h1></section><div className="spice"><div><span>SPICE PROGRESS</span><b>{game.spiceScore}%</b></div><div className="spice-bar"><i style={{ width: `${game.spiceScore}%` }} /></div><p>Level {level} · {labelForLevel(level)}</p></div><article className={game.settings.animations ? 'dare-card reveal' : 'dare-card'}><div className="dare-meta"><span>{game.currentDare.isSpecial ? '✦ SURPRISE DARE' : game.currentDare.category}</span><span>LEVEL {game.currentDare.spiceLevel}</span></div><h2>{dareText}</h2>{game.currentDare.description && <p>{game.currentDare.description}</p>}{game.currentDare.isTimer && game.settings.timerEnabled && <div className="timer"><strong>{formatted}</strong>{timer.ended && <b className="timeup">Time’s up! ✦</b>}<div><button onClick={timer.running ? timer.pause : timer.start}>{timer.running ? 'Pause' : 'Start'}</button><button onClick={timer.reset}>Zurücksetzen</button></div></div>}</article><div className="game-actions"><button className="primary" onClick={() => proceed(true)}>Geschafft <span>✓</span></button><button className="secondary" onClick={() => proceed(false)}>Überspringen {game.settings.unlimitedSkips ? '' : `· ${player.skips} ○`}</button><button className="ghost" onClick={() => setGame(replaceDare(game, customDares))}>Neue Aufgabe</button></div><div className="stats"><span>✦ {game.completed} erledigt</span><span>⚡ {game.streak} Streak</span></div>{game.completed > 0 && game.completed % 10 === 0 && <p className="achievement">{game.completed} Dares geschafft! Ihr seid im Flow. ✦</p>}</Shell>
 }
 
 function DareManager({ dares, setDares, onDelete, onBack }: { dares: Dare[]; setDares: (d: Dare[]) => void; onDelete: (id: string) => void; onBack: () => void }) {
@@ -121,7 +180,7 @@ function DareManager({ dares, setDares, onDelete, onBack }: { dares: Dare[]; set
 
 function DareForm({ dare, onSave, onCancel }: { dare: Dare; onSave: (d: Dare) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState(dare); const submit = (e: FormEvent) => { e.preventDefault(); if (draft.text.trim()) onSave({ ...draft, text: draft.text.trim(), spiceValue: draft.spiceLevel * 3 + (draft.isSpecial ? 3 : 0) }) }
-  return <form className="setup-card dare-form" onSubmit={submit}><h2>Eigene Dare</h2><label>Dare-Text<textarea value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })} placeholder="Umarme deinen Partner für 60 Sekunden." required maxLength={280} /></label><label>Beschreibung (optional)<input value={draft.description ?? ''} onChange={e => setDraft({ ...draft, description: e.target.value })} maxLength={180} /></label><div className="two-col"><label>Kategorie<select value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value as Category })}>{categories.map(c => <option key={c}>{c}</option>)}</select></label><label>Spice<select value={draft.spiceLevel} onChange={e => setDraft({ ...draft, spiceLevel: Number(e.target.value) as Dare['spiceLevel'] })}>{[1,2,3,4,5].map(n => <option key={n} value={n}>Level {n}</option>)}</select></label></div><div className="two-col"><label>Zielperson<select value={draft.target} onChange={e => setDraft({ ...draft, target: e.target.value as Target })}>{(['Beide','Spieler 1','Spieler 2','Mann','Frau','Beliebig'] as Target[]).map(x => <option key={x}>{x}</option>)}</select></label><label>Timer (Sek.)<input type="number" min="0" max="3600" value={draft.duration ?? ''} onChange={e => { const duration = Number(e.target.value) || undefined; setDraft({ ...draft, duration, isTimer: Boolean(duration) }) }} /></label></div><Toggle label="Surprise Dare" checked={draft.isSpecial} onChange={v => setDraft({ ...draft, isSpecial: v })} /><div className="form-actions"><button type="button" className="ghost" onClick={onCancel}>Abbrechen</button><button className="primary">Speichern</button></div></form>
+  return <form className="setup-card dare-form" onSubmit={submit}><h2>Eigene Dare</h2><label>Dare-Text<textarea value={draft.text} onChange={e => setDraft({ ...draft, text: e.target.value })} placeholder="Umarme deinen Partner für 60 Sekunden." required maxLength={280} /></label><label>Beschreibung (optional)<input value={draft.description ?? ''} onChange={e => setDraft({ ...draft, description: e.target.value })} maxLength={180} /></label><div className="two-col"><label>Kategorie<select value={draft.category} onChange={e => setDraft({ ...draft, category: e.target.value as Category })}>{categories.map(c => <option key={c}>{c}</option>)}</select></label><label>Spice<select value={draft.spiceLevel} onChange={e => setDraft({ ...draft, spiceLevel: Number(e.target.value) as Dare['spiceLevel'] })}>{[1,2,3,4,5].map(n => <option key={n} value={n}>Level {n}</option>)}</select></label></div><div className="two-col"><label>Zielperson<select value={draft.target} onChange={e => setDraft({ ...draft, target: e.target.value as Target })}>{(['Mann','Frau','Beliebig'] as Target[]).map(x => <option key={x}>{x}</option>)}</select></label><label>Timer (Sek.)<input type="number" min="0" max="3600" value={draft.duration ?? ''} onChange={e => { const duration = Number(e.target.value) || undefined; setDraft({ ...draft, duration, isTimer: Boolean(duration) }) }} /></label></div><Toggle label="Surprise Dare" checked={draft.isSpecial} onChange={v => setDraft({ ...draft, isSpecial: v })} /><div className="form-actions"><button type="button" className="ghost" onClick={onCancel}>Abbrechen</button><button className="primary">Speichern</button></div></form>
 }
 
 function Settings({ value, onChange, onBack }: { value: GameSettings; onChange: (s: GameSettings) => void; onBack: () => void }) {
