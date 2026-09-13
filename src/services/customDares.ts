@@ -26,3 +26,19 @@ export async function syncCloudDares(dares: Dare[]) {
   const result = await supabase.from('custom_dares').upsert(rows)
   return !result.error
 }
+
+export async function requestMagicLink(email: string) {
+  if (!supabase) return 'Supabase ist noch nicht eingerichtet.'
+  const result = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } })
+  return result.error?.message ?? null
+}
+
+export async function cloudIdentity() {
+  if (!supabase) return null
+  const result = await supabase.auth.getUser()
+  return result.data.user?.email ?? null
+}
+
+export async function signOutCloud() {
+  if (supabase) await supabase.auth.signOut()
+}
