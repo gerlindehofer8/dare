@@ -45,7 +45,17 @@ function App() {
   const [notice, setNotice] = useState('')
   const cloudReady = useRef(false)
   useEffect(() => writeStore({ version: 2, activeGame: game, customDares, preferences }), [game, customDares, preferences])
-  useEffect(() => { if (!supabase) return; const refreshCloud = () => void fetchCloudDares().then(remote => { if (!remote) return; cloudReady.current = true; setCustomDares(local => Array.from(new Map([...remote, ...local].map(dare => [dare.id, dare])).values())) }); refreshCloud(); const { data } = supabase.auth.onAuthStateChange(() => window.setTimeout(refreshCloud, 0)); return () => data.subscription.unsubscribe() }, [])
+  useEffect(() => {
+    if (!supabase) return
+    const refreshCloud = () => void Promise.all([cloudIdentity(), fetchCloudDares()]).then(([identity, remote]) => {
+      if (!remote) return
+      cloudReady.current = true
+      setCustomDares(local => identity ? remote : Array.from(new Map([...remote, ...local].map(dare => [dare.id, dare])).values()))
+    })
+    refreshCloud()
+    const { data } = supabase.auth.onAuthStateChange(() => window.setTimeout(refreshCloud, 0))
+    return () => data.subscription.unsubscribe()
+  }, [])
   useEffect(() => { if (supabase && cloudReady.current) void syncCloudDares(customDares) }, [customDares])
   const go = (next: View) => { setNotice(''); setView(next) }
   const show = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(''), 3200) }
