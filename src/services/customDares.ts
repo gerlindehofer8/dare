@@ -27,6 +27,13 @@ export async function syncCloudDares(dares: Dare[]) {
   return !result.error
 }
 
+export async function deleteCloudDare(id: string) {
+  const ownerId = await currentUserId()
+  if (!supabase || !ownerId) return false
+  const result = await supabase.from('custom_dares').delete().eq('id', id).eq('owner_id', ownerId)
+  return !result.error
+}
+
 export async function requestMagicLink(email: string) {
   if (!supabase) return 'Supabase ist noch nicht eingerichtet.'
   const result = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } })
