@@ -3,7 +3,7 @@ import type { Category, Dare } from '../types'
 type Seed = { text: string; category: Category; duration?: number; special?: boolean; target?: Dare['target']}
 const make = (level: Dare['spiceLevel'], rows: Seed[]): Dare[] => rows.map((row, index) => ({
   id: `builtin-${level}-${index + 1}`, text: row.text, category: row.category, spiceLevel: level,
-  target: row.target ?? 'Beliebig', duration: row.duration, isTimer: Boolean(row.duration), isSpecial: Boolean(row.special), spiceValue: level * 3 + (row.special ? 3 : 0)
+  target: row.target ?? 'Beliebig', duration: row.duration, isTimer: Boolean(row.duration), isSpecial: Boolean(row.special), spiceValue: level + (level === 1 ? 1 : 0) + (row.special ? 1 : 0)
 }))
 
 const one: Seed[] = [
@@ -23,6 +23,8 @@ const one: Seed[] = [
   { text: 'Zieh deinem Partner ein Kleidungsstück aus', category: 'Romantic', target: 'Beliebig'},
   { text: 'Gib deinem Partner eine Rückenmassage', category: 'Romantic', target: 'Beliebig'},
   { text: 'Berührt die Zungen miteinander', category: 'Romantic', target: 'Beliebig'},
+  { text: 'Zieh ein kleidungsstücke deiner Wahl aus', category: 'Romantic', target: 'Beliebig'},
+  { text: 'Gib deinem Partner ein Kompliment', category: 'Romantic', target: 'Beliebig'},
 
 
 
@@ -127,13 +129,12 @@ const two: Seed[] = [
   { text: 'Zieh dein Oberteil aus und setz dich bis zur nächsten Runde auf ihn', category: 'Flirty', target: 'Frau'},
   { text: 'Lass ihn deinen BH öffnen', category: 'Flirty', target: 'Frau'},
   { text: 'Reibe dich 20 Sekunden mit dem Slip an seinem Schwanz', category: 'Spicy', duration: 20, target: 'Frau'},
-  { text: 'Streichle seinen Schwanz über der Unterhose', category: 'Spicy', target: 'Frau'},
   { text: 'Zieh deinem Partner das Shirt aus und küsse seinen Oberkörper', category: 'Spicy', target: 'Frau'},
   { text: 'Gehe mit der Hand in deinem Partner seine Unterhose und fasse ihn an', category: 'Spicy', target: 'Frau'},
   { text: 'Schließe deine Augen und lege dich auf den Bauch, dein Partner küsst dich auf dem Bauch', category: 'Flirty', target: 'Frau'},
   { text: 'Teile eine Sache die dich eregt', category: 'Flirty', target: 'Frau' },
   { text: 'dein Partner darf bis zur nächsten Runde nicht "nein" sagen', category: 'Flirty', target: 'Frau' },
-
+  { text: 'Streichle seinen Schwanz über der Unterhose', category: 'Touch', target: 'Frau'},
   { text: 'Du bist die strenge Chefin, er dein Mitarbeiter. Lass ihn vor dir knien und „Entschuldigung“ sagen… auf deine Art', category: 'Surprise', target: 'Frau' },
   { text: 'Du bist die Lehrerin, er der Schüler, der nachsitzen muss. Bestimm du, wie die Strafe aussieht', category: 'Surprise', target: 'Frau' },
   { text: 'Du bist die teure Escort, er der Kunde. Sag ihm den Preis und was er dafür bekommt', category: 'Surprise', target: 'Frau' },
@@ -196,16 +197,13 @@ const three: Seed[] = [
   { text: 'Film kurz, wie du ihre Pussy streichelst', category: 'Spicy', target: 'Mann' },
   { text: 'Sag ihr: „Ich will dich gleich richtig vollspritzen“', category: 'Spicy', target: 'Mann' },
   { text: 'Zieh sie draußen (Auto/Balkon) den Slip runter und lecke sie kurz', category: 'Spicy', target: 'Mann' },
-  { text: 'Sag ihr draußen: „Ich könnte dich hier jeden Moment nehmen“', category: 'Spicy', target: 'Mann' },
-  { text: 'Fingere sie, während sie eine Runde Minecraft / ein Spiel spielt', category: 'Spicy', target: 'Mann' },
-  { text: 'Sag ihr während du sie fingerst: „Konzentrier dich aufs Spiel, Mommy“', category: 'Spicy', target: 'Mann' },
+  { text: 'Sag ihr draußen: „Ich könnte dich hier jeden durch ficken', category: 'Spicy', target: 'Mann' },
   { text: 'Du massiert deinem Partner 3 Minuten lang nur die Füße und küsst/leckt sie danach', category: 'Massage', target: 'Mann' },
 
   // =========================
   // NUR FRAU
   // =========================
   { text: 'Küsse deinem Partner seinen nackten Oberkörper 20 Sekunden', category: 'Romantic', duration: 20, target: 'Frau'},
-  { text: 'Streichle seinen Schwanz über der Unterhose', category: 'Touch', target: 'Frau'},
   { text: 'Zieh dein Oberteil aus und setz dich bis zur nächsten Runde auf ihn', category: 'Flirty', target: 'Frau'},
   { text: 'Lass ihn deinen BH öffnen', category: 'Flirty', target: 'Frau'},
   { text: 'Reibe dich 20 Sekunden mit dem Slip an seinem Schwanz', category: 'Spicy', duration: 20, target: 'Frau'},
@@ -226,14 +224,14 @@ const three: Seed[] = [
   { text: 'Twerke mit deinem arsch', category: 'Flirty', target: 'Frau' },
   { text: 'Zeig deinem Partner von hinten deine Pussy und lass dir deinen Ass versohlen', category: 'Flirty', target: 'Frau' },
   { text: 'mach einen typischen stripper tanz und reibe dabei deinen arsch an deinem Partner', category: 'Flirty', target: 'Frau' },
-  { text: 'setze dich afu den Schoß von deinem Partner. Er darf deine Brüste so lange massieren bis du wieder dran bist', category: 'Flirty', target: 'Frau' },
+  { text: 'setze dich auf den Schoß von deinem Partner. Er darf deine Brüste so lange massieren bis du wieder dran bist', category: 'Flirty', target: 'Frau' },
   { text: 'Lass dich für 2min fesseln, dein Partner darf alles machen was er will', category: 'Spicy', target: 'Frau' },
   { text: 'Mach ein Foto von seinem harten Schwanz', category: 'Flirty', target: 'Frau' },
   { text: 'Film kurz, wie du ihn einem Runter holst', category: 'Spicy', target: 'Frau' },
   { text: 'Sag ihm: „Spritz mir später ins Gesicht“', category: 'Spicy', target: 'Frau' },
   { text: 'Zieh dir draußen den Slip aus und gib ihm die Hand, damit er fühlen kann dass du nichts drunter hast', category: 'Spicy', target: 'Frau' },
-  { text: 'Gib ihm draußen (Auto/Balkon) einen kurzen Blowie', category: 'Spicy', target: 'Frau' },
-  { text: 'Gib ihm einen Blowie, während er eine Runde Minecraft / ein Spiel spielt', category: 'Spicy', target: 'Frau' },
+  
+  
 
   
   
@@ -280,6 +278,8 @@ const four: Seed[] = [
   { text: 'Hol dir einen runter, vor ihr', category: 'Spicy', target: 'Mann' },
   { text: 'Bind ihre Hände fest und fingere sie, ohne dass sie sich wehren darf', category: 'Spicy', target: 'Mann' },
   { text: 'Mach Praise mit ihr: Sag ihr die ganze Zeit, wie brav und geil sie ist, während du sie fingerst', category: 'Romantic', target: 'Mann' },
+  { text: 'Fingere sie, während sie eine Runde Minecraft / ein Spiel spielt', category: 'Spicy', target: 'Mann' },
+  { text: 'Sag ihr während du sie fingerst: „Konzentrier dich aufs Spiel, Mommy“', category: 'Spicy', target: 'Mann' },
 
   // =========================
   // NUR FRAU
@@ -308,6 +308,8 @@ const four: Seed[] = [
   { text: 'Bleibt die ganze Zeit ineinander, während ihr zusammen eine Runde co-op spielt (z.B. It Takes Two oder Minecraft)', category: 'Spicy', target: 'Beliebig' },
   { text: 'Mastubiere dich selbst vor ihm und stöhn dabei', category: 'Spicy', target: 'Beliebig' },
   { text: 'Bind seine Hände und benutz seinen Mund / Schwanz, wie du willst', category: 'Spicy', target: 'Frau' },
+  { text: 'Gib ihm draußen (Auto/Balkon) einen kurzen Blowie', category: 'Spicy', target: 'Frau' },
+  { text: 'Gib ihm einen Blowie, während er eine Runde Minecraft / ein Spiel spielt', category: 'Spicy', target: 'Frau' },
 ];
 
 const five: Seed[] = [

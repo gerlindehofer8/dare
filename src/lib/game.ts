@@ -36,11 +36,11 @@ function levelsFor(
   const current = Math.min(scoreLevel(score), max)
   const roll = Math.random()
 
-  if (roll < 0.7) {
+  if (roll < 0.9) {
     return [current]
   }
 
-  if (roll < 0.9) {
+  if (roll < 0.97) {
     return [Math.min(max, current + 1)]
   }
 
@@ -147,6 +147,7 @@ export function selectDare(
     score,
     settings.maxSpice
   )
+
 
   const normal = permitted.filter(
     dare => targetLevels.includes(dare.spiceLevel)

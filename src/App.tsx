@@ -16,24 +16,48 @@ const modes: { mode: GameMode; hint: string }[] = [
 const initialPlayer = (): Player => ({ name: '', gender: 'Mann', skips: 3 })
 const labelForLevel = (n: number) => ['Cute', 'Flirty', 'Spicy', 'Hot', 'Very Hot'][n - 1]
 function playGentleChime() {
-  try {
-    const context = new AudioContext()
-    const now = context.currentTime
-    ;[523.25, 659.25].forEach((frequency, index) => {
-      const oscillator = context.createOscillator()
-      const gain = context.createGain()
-      const start = now + index * 0.16
-      oscillator.type = 'sine'
-      oscillator.frequency.setValueAtTime(frequency, start)
-      gain.gain.setValueAtTime(0.0001, start)
-      gain.gain.exponentialRampToValueAtTime(0.045, start + 0.025)
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.48)
-      oscillator.connect(gain).connect(context.destination)
-      oscillator.start(start)
-      oscillator.stop(start + 0.5)
-    })
-    window.setTimeout(() => void context.close(), 800)
-  } catch { /* Audio is optional and may be blocked by the browser. */ }
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as typeof window & {
+      webkitAudioContext?: typeof AudioContext
+    }).webkitAudioContext
+
+  if (!AudioContextClass) return
+
+  const ctx = new AudioContextClass()
+
+  const playTone = (
+    frequency: number,
+    start: number,
+    duration: number
+  ) => {
+    const oscillator = ctx.createOscillator()
+    const gain = ctx.createGain()
+
+    oscillator.type = 'sine'
+    oscillator.frequency.value = frequency
+
+    gain.gain.setValueAtTime(0.0001, start)
+    gain.gain.exponentialRampToValueAtTime(0.35, start + 0.02)
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      start + duration
+    )
+
+    oscillator.connect(gain)
+    gain.connect(ctx.destination)
+
+    oscillator.start(start)
+    oscillator.stop(start + duration)
+  }
+
+  const now = ctx.currentTime
+
+  playTone(880, now, 0.25)
+  playTone(660, now + 0.22, 0.25)
+  playTone(880, now + 0.44, 0.35)
+
+  setTimeout(() => ctx.close(), 1200)
 }
 
 function App() {
