@@ -34,6 +34,12 @@ function levelsFor(
   }
 
   const current = Math.min(scoreLevel(score), max)
+
+  // Auf Level 1 bleibt man immer auf Level 1.
+  if (current === 1) {
+    return [1]
+  }
+
   const roll = Math.random()
 
   if (roll < 0.9) {

@@ -109,7 +109,11 @@ function Home({ game, onGo, notice, backend }: { game: GameState | null; onGo: (
 }
 
 function Setup({ initial, hasCustomDares, onBack, onStart }: { initial: GameSettings; hasCustomDares: boolean; onBack: () => void; onStart: (p: [Player, Player], m: GameMode, s: GameSettings) => void }) {
-  const [step, setStep] = useState(1); const [players, setPlayers] = useState<[Player, Player]>([initialPlayer(), initialPlayer()]); const [mode, setMode] = useState<GameMode>('Classic'); const [settings, setSettings] = useState(initial); const [error, setError] = useState('')
+  const [step, setStep] = useState(1);
+const [players, setPlayers] = useState<[Player, Player]>([
+  initialPlayer(),
+  { ...initialPlayer(), gender: 'Frau' }
+]); const [mode, setMode] = useState<GameMode>('Classic'); const [settings, setSettings] = useState(initial); const [error, setError] = useState('')
   const updatePlayer = (index: 0 | 1, field: keyof Player, value: string | number) => setPlayers(old => { const copy = [...old] as [Player, Player]; copy[index] = { ...copy[index], [field]: value }; return copy })
   const next = () => { if (step < 3 && !players[step - 1].name.trim()) return setError('Bitte gib einen Namen ein.'); setError(''); setStep(s => s + 1) }
   return <Shell><header className="page-head"><button className="icon-button" onClick={onBack} aria-label="Zurück">←</button><span>NEUES SPIEL</span><b>Schritt {step}/4</b></header><div className="progress-line"><span style={{ width: `${step * 25}%` }} /></div>
